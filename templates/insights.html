@@ -1,0 +1,12 @@
+{% extends "base.html" %}{% load ui %}{% block title %}Insights{% endblock %}
+{% block body %}
+<div class="head"><div><h1>Insights</h1><p class="sub">Last 12 weeks · {{ total }} job{{ total|pluralize }} completed</p></div><div class="head-r">{% scope_toggle request scope %}</div></div>
+<div class="card"><h2>Jobs done per week</h2>{{ weekly }}</div>
+<div class="charts2">
+ <div class="card"><h2>On-time rate</h2><div class="chart-row">{{ ontime }}<ul class="legend"><li><i class="dot c-green"></i>On time ({{ on }})</li><li><i class="dot c-red"></i>Late ({{ late }})</li></ul></div></div>
+ <div class="card"><h2>Types of work</h2><div class="chart-row">{{ mix }}</div></div>
+ <div class="card"><h2>Done by area</h2>{% if by_area %}{{ by_area }}{% else %}<p class="meta">No data yet.</p>{% endif %}</div>
+ {% if by_person %}<div class="card"><h2>Done by person</h2>{{ by_person }}</div>{% endif %}
+</div>
+<div class="card"><h2>Active project progress (%)</h2>{% if prog %}{{ prog }}{% else %}<p class="meta">No active projects.</p>{% endif %}</div>
+{% endblock %}

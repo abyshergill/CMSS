@@ -1,0 +1,26 @@
+{% extends "base.html" %}{% load ui %}{% block title %}History{% endblock %}
+{% block body %}
+<div class="head"><div><h1>History</h1><p class="sub">Every job that has been completed: when, by whom, who it was assigned by, and the checkpoints that were checked.</p></div><div class="head-r">{% scope_toggle request scope %}</div></div>
+
+<details class="card"><summary><b>⬇ Download jobs done in a period</b></summary>
+ <form method="get" action="{% url 'export' %}" class="mt"><div class="grid4">
+  {% include "partials/_field.html" with field=form.date_from %}{% include "partials/_field.html" with field=form.date_to %}
+  {% include "partials/_field.html" with field=form.format %}{% include "partials/_field.html" with field=form.scope %}
+  {% include "partials/_field.html" with field=form.job %}{% include "partials/_field.html" with field=form.project %}{% if form.person %}{% include "partials/_field.html" with field=form.person %}{% endif %}</div>
+ <button class="btn primary">Download</button> <span class="meta">Filters combine: e.g. one job name + one person + one month. The file includes who assigned the job, when, and every checkpoint.</span></form></details>
+
+<form class="chips" method="get"><input type="hidden" name="scope" value="{{ scope }}">{% if late %}<input type="hidden" name="late" value="1">{% endif %}
+ <input name="q" value="{{ q }}" maxlength="80" placeholder="Search job, equipment, person or notes…" class="search" aria-label="Search history"><button class="btn">Search</button>
+ <a class="chip {% if not late %}on{% endif %}" href="{% qs request late=None page=None %}">All</a>
+ <a class="chip {% if late %}on{% endif %}" href="{% qs request late='1' page=None %}">Done late only</a></form>
+
+<div class="card flush"><table class="hist"><tr><th>Done</th><th>Job</th><th>Assigned</th><th>Checkpoints</th><th>Notes / file</th><th>By</th></tr>
+{% for c in page %}<tr><td class="nowrap"><b>{{ c.done_at|date:"d M Y" }}</b><div class="meta">{{ c.done_at|date:"H:i" }} · for {{ c.planned_date|date:"d M" }}</div>{% if not c.on_time %}<div><span class="tag red nomargin">late</span></div>{% endif %}</td>
+ <td><a href="{% url 'job_detail' c.job_id %}"><b>{{ c.job.title }}</b></a>{% if c.job.project %} <span class="tag proj">🎯 {{ c.job.project.name }}</span>{% elif c.job.kind == 'repeat' %} <span class="tag rep">↻ {{ c.job|describe }}</span>{% endif %}
+  <div class="meta">{% if c.job.equipment %}{{ c.job.equipment.name }} ({{ c.job.equipment.code }}){% endif %}</div></td>
+ <td>{% include "partials/_comp_assigned.html" %}</td>
+ <td>{% include "partials/_comp_checks.html" %}</td>
+ <td>{{ c.note|default:"—" }}{% if c.evidence %}<div><a href="{% url 'evidence' c.pk %}">📎 {{ c.evidence_name|default:"file" }}</a></div>{% endif %}</td><td class="meta">{{ c.done_by.username|default:"" }}</td></tr>
+{% empty %}<tr><td colspan="6" class="meta">Nothing found.</td></tr>{% endfor %}</table></div>
+{% include "partials/_pager.html" %}
+{% endblock %}

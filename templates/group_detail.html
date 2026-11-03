@@ -1,0 +1,31 @@
+{% extends "base.html" %}{% load ui %}{% block title %}{{ g.name }}{% endblock %}
+{% block body %}
+<div class="head"><div><p class="sub"><a href="{% url 'setup' %}?tab=groups">‹ All groups</a></p><h1>👥 {{ g.name }}</h1>
+ <p class="sub">{{ total_members }} member{{ total_members|pluralize }} · {{ njobs }} job{{ njobs|pluralize }} assigned. Jobs given to this group appear in every member's calendar.</p></div>
+ <div class="head-r"><form method="post" action="{% url 'group_delete' g.pk %}" class="inline" data-confirm="Delete this group? Its jobs stay but become open to anyone.">{% csrf_token %}<button class="btn danger">Delete group</button></form></div></div>
+
+<div class="card"><form method="post" action="{% url 'group_edit' g.pk %}" class="toolbar-form">{% csrf_token %}
+ <label class="grow"><span class="meta">Group name</span><input name="name" value="{{ g.name }}" maxlength="80" required></label><button class="btn">Rename</button></form></div>
+
+<div class="cols2">
+ <div class="card"><h2>Members <span class="meta">({{ total_members }})</span></h2>
+  <form method="get" class="toolbar-form"><input type="hidden" name="q" value="{{ q }}">
+   <input class="search" type="search" name="mq" value="{{ mq }}" placeholder="Find a member…" maxlength="80" aria-label="Find a member"><button class="btn">Find</button>{% if mq %}<a class="btn link" href="?q={{ q }}">Clear</a>{% endif %}</form>
+  <table class="tbl">
+   {% for m in page %}<tr><td><span class="avatar">{{ m|initials }}</span> <b>{{ m.username }}</b>{% if not m.is_active %} <span class="tag">deactivated</span>{% endif %}</td>
+    <td class="right"><form method="post" action="{% url 'group_member_remove' g.pk m.pk %}" class="inline">{% csrf_token %}<input type="hidden" name="back" value="{{ request.get_full_path }}"><button class="btn sm">Remove</button></form></td></tr>
+   {% empty %}<tr><td class="empty-row" colspan="2">{% if mq %}Nobody called “{{ mq }}” in this group.{% else %}No members yet. Add people from the right.{% endif %}</td></tr>{% endfor %}
+  </table>
+  {% include "partials/_pager.html" %}</div>
+
+ <div class="card"><h2>Add people</h2>
+  <form method="get" class="toolbar-form"><input type="hidden" name="mq" value="{{ mq }}">
+   <input class="search" type="search" name="q" value="{{ q }}" placeholder="Search by name…" maxlength="80" aria-label="Search people to add"><button class="btn">Search</button>{% if q %}<a class="btn link" href="?mq={{ mq }}">Clear</a>{% endif %}</form>
+  <form method="post" action="{% url 'group_members_add' g.pk %}">{% csrf_token %}<input type="hidden" name="back" value="{{ request.get_full_path }}">
+   {% if candidates %}<label class="chk all"><input type="checkbox" data-check-all> Select all shown</label>
+   <div class="pick-list">{% for u in candidates %}<label class="chk"><input type="checkbox" name="users" value="{{ u.pk }}"> <span class="avatar sm">{{ u|initials }}</span> {{ u.username }}</label>{% endfor %}</div>
+   {% if more_candidates %}<p class="meta">Showing the first {{ candidates|length }}. Type a name to narrow it down.</p>{% endif %}
+   <button class="btn primary">Add selected</button>
+   {% else %}<p class="meta">{% if q %}Nobody else matches “{{ q }}”.{% else %}Everyone is already in this group.{% endif %}</p>{% endif %}</form></div>
+</div>
+{% endblock %}

@@ -1,0 +1,45 @@
+{% extends "base.html" %}{% block title %}{% if job %}Edit job{% else %}New job{% endif %}{% endblock %}
+{% block body %}
+<div class="head"><h1>{% if project %}{% if job %}Edit task{% else %}New task{% endif %} <span class="mute">· {{ project.name }}</span>{% elif job %}Edit job{% else %}New job{% endif %}</h1></div>
+{% if not project and not form.fields.equipment.queryset.exists %}<div class="empty">Add some <a href="{% url 'equipment' %}">equipment</a> first, then come back.</div>{% else %}
+<form id="jobform" method="post" enctype="multipart/form-data" class="card narrow">{% csrf_token %}
+{{ form.non_field_errors }}
+{% include "partials/_field.html" with field=form.title %}
+{% include "partials/_field.html" with field=form.equipment %}
+{% if not project %}
+<div class="field{% if form.kind.errors %} has-error{% endif %}"><label>How often?</label><div class="seg" id="kind-choice">
+ {% for radio in form.kind %}<label class="opt">{{ radio.tag }} <b>{{ radio.choice_label }}</b><small>{% if radio.data.value == 'once' %}A normal job with a due date{% else %}Comes back on a schedule{% endif %}</small></label>{% endfor %}</div>
+ {% for e in form.kind.errors %}<div class="err">{{ e }}</div>{% endfor %}</div>
+<div id="once-box">{% include "partials/_field.html" with field=form.due_date %}</div>
+<div id="repeat-box">
+ <div class="chips">
+  <button type="button" class="chip" data-preset="1:day">Daily</button><button type="button" class="chip" data-preset="1:week">Weekly</button>
+  <button type="button" class="chip" data-preset="2:week">Every 2 weeks</button><button type="button" class="chip" data-preset="1:month">Monthly</button>
+  <button type="button" class="chip" data-preset="3:month">Quarterly</button><button type="button" class="chip" data-preset="1:year">Yearly</button></div>
+ <div class="hint" id="window-hint">Each date can only be marked done inside its own day, week, month or year (never in advance).</div>
+ <div class="grid3">{% include "partials/_field.html" with field=form.every %}{% include "partials/_field.html" with field=form.unit %}{% include "partials/_field.html" with field=form.first_date %}</div>
+ {% include "partials/_field.html" with field=form.end_date %}
+ <div class="field skip-field{% if form.skip_dates.errors %} has-error{% endif %}"><label for="{{ form.skip_dates.id_for_label }}">{{ form.skip_dates.label }} <small class="mute">(optional)</small></label>
+  {{ form.skip_dates }}
+  <div id="skip-widget" hidden>
+   <div class="skip-add"><input type="date" id="skip-picker" aria-label="Pick a day to skip"><button type="button" class="btn sm" id="skip-add">+ Add this day</button></div>
+   <div class="chips" id="skip-chips" aria-live="polite"></div>
+   <small id="skip-empty" class="mute">No days left out yet.</small>
+  </div>
+  <small class="mute">{{ form.skip_dates.help_text }} The job is simply not scheduled on these days; every other day stays normal.</small>
+  {% for e in form.skip_dates.errors %}<div class="err">{{ e }}</div>{% endfor %}</div>
+</div>
+<div class="hint" id="summary"></div>
+{% else %}{% include "partials/_field.html" with field=form.due_date %}{% endif %}
+{% include "partials/_field.html" with field=form.instructions %}
+<div class="card inner"><b>Who should do it?</b><div class="grid2">{% include "partials/_field.html" with field=form.assignee %}{% include "partials/_field.html" with field=form.assigned_group %}</div>
+ <small class="mute">Pick a person <em>or</em> a group (or neither, then anyone can do it). A group job appears in the calendar of every member.</small></div>
+{% include "partials/_field.html" with field=form.checkpoints %}
+<div class="field{% if form.evidence_required.errors %} has-error{% endif %}"><label class="chk big">{{ form.evidence_required }} <b>{{ form.evidence_required.label }}</b></label>
+ <small class="mute">{{ form.evidence_required.help_text }}</small>{% for e in form.evidence_required.errors %}<div class="err">{{ e }}</div>{% endfor %}</div>
+{% include "partials/_field.html" with field=form.weight %}
+<div class="field{% if form.files.errors %} has-error{% endif %}"><label>{{ form.files.label }}</label>{{ form.files }}
+ <small class="mute">Reference material for whoever does the job: drawings, manuals, checklists, data. Max 10 MB each, 10 files at a time.</small>
+ {% for e in form.files.errors %}<div class="err">{{ e }}</div>{% endfor %}</div>
+<div class="mt row-gap"><button class="btn primary">Save</button><a class="btn" href="{% if project %}{% url 'project_detail' project.pk %}{% else %}{% url 'jobs' %}{% endif %}">Cancel</a></div>
+</form>{% endif %}{% endblock %}

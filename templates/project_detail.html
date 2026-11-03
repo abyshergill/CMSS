@@ -1,0 +1,29 @@
+{% extends "base.html" %}{% load ui %}{% block title %}{{ p.name }}{% endblock %}
+{% block body %}
+<div class="head"><div><h1>🎯 {{ p.name }} {% if p.status == 'closed' %}<span class="tag">closed</span>{% endif %}</h1>
+ <p class="sub">{% if p.owner %}Owner: {{ p.owner.username }}{% endif %}{% if p.due_date %} · due {{ p.due_date|date:"d M Y" }} ({{ p.due_date|rel }}){% endif %}</p></div>
+ <div class="head-r">{% scope_toggle request scope "My tasks only" %}
+ {% if can_manage %}<a class="btn primary" href="{% url 'task_new' p.pk %}">+ Add task</a><a class="btn" href="{% url 'project_edit' p.pk %}">Edit</a>
+ <form method="post" action="{% url 'project_toggle' p.pk %}" class="inline">{% csrf_token %}<button class="btn">{% if p.status == 'closed' %}Reopen{% else %}Close project{% endif %}</button></form>{% endif %}
+ {% if admin %}<form method="post" action="{% url 'project_delete' p.pk %}" class="inline" data-confirm="Delete this project and all its tasks?">{% csrf_token %}<button class="btn danger">Delete</button></form>{% endif %}</div></div>
+{% if p.description %}<div class="card pre">{{ p.description }}</div>{% endif %}
+
+<div class="card"><div class="progress-head"><b>{{ s.pct }}% complete</b><span class="meta">{{ s.done }} of {{ s.total }} tasks · {{ s.weight_done }} of {{ s.weight_total }} effort points{% if s.overdue %} · <span class="red-t">{{ s.overdue }} overdue</span>{% endif %}</span></div>
+ <progress class="bigbar" value="{{ s.pct }}" max="100">{{ s.pct }}%</progress></div>
+
+<div class="charts2">
+ <div class="card"><h2>Task status</h2><div class="chart-row">{{ donut }}
+  <ul class="legend"><li><i class="dot c-green"></i>Done</li><li><i class="dot c-red"></i>Overdue</li><li><i class="dot c-amber"></i>Due today</li><li><i class="dot c1"></i>To do</li></ul></div></div>
+ <div class="card"><h2>Points completed per person</h2>{% if people %}{{ people }}{% else %}<p class="meta">Nothing completed yet.</p>{% endif %}</div>
+</div>
+
+<h2>Tasks {% if scope == 'mine' %}<span class="meta">(only yours)</span>{% endif %}</h2>
+{% for r in rows %}<div class="row {{ r.status }}">
+ <div class="main"><div class="title"><a href="{% url 'job_detail' r.job.pk %}">{{ r.job.title }}</a> <span class="tag">{{ r.job.weight }} pt{{ r.job.weight|pluralize }}</span>{% if not r.job.active %} <span class="tag">paused</span>{% endif %}</div>
+  <div class="meta">{% if r.job.assigned_group %}{{ r.job.assigned_label }}{% else %}👤 {{ r.job.assignee.username|default:"Unassigned" }}{% endif %}{% with n=r.job.attachments.count %}{% if n %} · 📎 {{ n }} file{{ n|pluralize }}{% endif %}{% endwith %}</div></div>
+ <div class="when meta">{% if r.status == 'done' %}<span class="tag green">Done {{ r.completion.done_at|date:"d M" }}</span>{% else %}{{ r.job.start_date|date:"D d M" }}<br>{% if r.status == 'overdue' %}<span class="tag red">{{ r.job.start_date|rel }}</span>{% else %}{{ r.job.start_date|rel }}{% endif %}{% endif %}</div>
+ <div class="acts">{% if r.status != 'done' and r.job.active and p.status == 'active' %}{% include "partials/_done_button.html" with job=r.job due=r.job.start_date late=False %}{% endif %}</div></div>
+{% empty %}<div class="empty">No tasks yet.{% if can_manage %} Use “Add task” to create the first one.{% endif %}</div>{% endfor %}
+{% include "partials/_pager.html" %}
+{% if can_manage %}<div class="mt"><a class="btn" href="{% url 'export' %}?date_from={{ p.created_at|date:'Y-m-d' }}&amp;date_to={% now 'Y-m-d' %}&amp;format=xlsx&amp;scope=all&amp;project={{ p.pk }}">⬇ Download completed tasks (Excel)</a></div>{% endif %}
+{% include "partials/_dialogs.html" %}{% endblock %}

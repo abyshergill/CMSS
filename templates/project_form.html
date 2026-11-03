@@ -1,0 +1,4 @@
+{% extends "base.html" %}{% block title %}Project{% endblock %}
+{% block body %}<div class="head"><h1>{% if project %}Edit project{% else %}Create project{% endif %}</h1></div>
+<form method="post" class="card narrow">{% csrf_token %}{{ form.non_field_errors }}{% for f in form %}{% include "partials/_field.html" with field=f %}{% endfor %}
+<div class="mt row-gap"><button class="btn primary">Save</button><a class="btn" href="{% url 'projects' %}">Cancel</a></div></form>{% endblock %}

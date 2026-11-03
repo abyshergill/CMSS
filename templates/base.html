@@ -1,0 +1,37 @@
+{% load static ui %}<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{% block title %}CMMS{% endblock %} · CMMS</title>
+<link rel="stylesheet" href="{% static 'style.css' %}"></head>
+<body class="{% if request.COOKIES.sidebar == 'hidden' %}side-hidden{% endif %}">
+{% if user.is_authenticated %}
+{% with u=request.resolver_match.url_name %}
+<div class="shell">
+<button type="button" class="side-open" data-side-toggle aria-controls="sidebar" aria-expanded="{% if request.COOKIES.sidebar == 'hidden' %}false{% else %}true{% endif %}" title="Show the menu">☰ <span>Menu</span></button>
+<nav class="side" id="sidebar" aria-label="Main menu">
+  <div class="brand">🔧 CM<span>MS</span></div>
+  <a class="nav {% if u == 'today' %}on{% endif %}" href="{% url 'today' %}"><span>Today</span></a>
+  <a class="nav {% if u == 'calendar' %}on{% endif %}" href="{% url 'calendar' %}"><span>Calendar</span></a>
+  <a class="nav {% if u == 'jobs' or u == 'job_detail' or u == 'job_new' or u == 'job_edit' %}on{% endif %}" href="{% url 'jobs' %}"><span>Jobs</span></a>
+  <a class="nav {% if 'project' in u %}on{% endif %}" href="{% url 'projects' %}"><span>Projects</span></a>
+  <a class="nav {% if 'equipment' in u %}on{% endif %}" href="{% url 'equipment' %}"><span>Equipment</span></a>
+  <a class="nav {% if u == 'history' %}on{% endif %}" href="{% url 'history' %}"><span>History</span></a>
+  <a class="nav {% if u == 'insights' %}on{% endif %}" href="{% url 'insights' %}"><span>Insights</span></a>
+  {% if admin_user %}<a class="nav {% if u == 'setup' %}on{% endif %}" href="{% url 'setup' %}"><span>Setup</span></a>{% endif %}
+  <button type="button" class="nav side-close" data-side-toggle aria-controls="sidebar" aria-expanded="{% if request.COOKIES.sidebar == 'hidden' %}false{% else %}true{% endif %}" title="Hide the menu to get more room">« <span>Hide menu</span></button>
+  <div class="who">
+    <div class="who-id"><span class="avatar lg" aria-hidden="true">{{ user|initials }}</span>
+      <div class="who-txt"><b title="{{ user.username }}">{{ user.username }}</b><span class="role role-{{ role }}">{{ role_label }}</span></div></div>
+    <div class="who-acts">
+      <a class="who-btn" href="{% url 'password_change' %}"><span>Change password</span></a>
+      <form method="post" action="{% url 'logout' %}">{% csrf_token %}<button class="who-btn out">⎋ <span>Sign out</span></button></form>
+    </div>
+  </div>
+</nav>
+<main>
+{% endwith %}
+{% endif %}
+{% for m in messages %}<div class="flash {{ m.tags }}">{{ m }}</div>{% endfor %}
+{% block body %}{% endblock %}
+{% if user.is_authenticated %}</main></div>{% endif %}
+<script src="{% static 'app.js' %}"></script>
+</body></html>
