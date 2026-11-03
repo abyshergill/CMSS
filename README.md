@@ -141,8 +141,3 @@ python manage.py test core -v 2
 | `core/tests/test_web.py` | **yes** | login, jobs, multi-day exceptions, mine/all, projects & progress, attachments, export |
 | `core/tests/test_security.py` | **yes** | lockout, CSRF, headers, authorisation matrix, SQLi/XSS payloads, upload attacks, passwords |
 
-Without Django installed you can still run the pure-Python ones:
-
-```bash
-python -m unittest core.tests.test_engine core.tests.test_filecheck core.tests.test_safe_charts_stats core.tests.test_static_security core.tests.test_env core.tests.test_datelist core.tests.test_windows
-```
