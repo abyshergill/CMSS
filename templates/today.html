@@ -1,0 +1,36 @@
+{% extends "base.html" %}{% load ui %}{% block title %}Today{% endblock %}
+{% block body %}
+<div class="head"><div><h1>Today</h1><p class="sub">{{ today|date:"l, d F Y" }}</p></div>
+  <div class="head-r">{% scope_toggle request scope %}{% if admin %}<a class="btn primary" href="{% url 'job_new' %}">+ New job</a>{% endif %}</div></div>
+
+<div class="stats">
+  <div class="stat red"><b>{{ counts.overdue }}</b>Overdue</div>
+  <div class="stat amber"><b>{{ counts.today }}</b>Due today</div>
+  <div class="stat blue"><b>{{ counts.upcoming }}</b>Next 7 days</div>
+</div>
+
+<div class="charts2">
+  <div class="card"><h2>Work by status</h2><div class="chart-row">{{ donut }}
+    <ul class="legend"><li><i class="dot c-red"></i>Overdue</li><li><i class="dot c-amber"></i>Due today</li><li><i class="dot c1"></i>Coming up</li><li><i class="dot c-green"></i>Done today</li></ul></div></div>
+  <div class="card"><h2>Jobs done per week</h2>{{ weekly }}</div>
+</div>
+
+<div class="chips">
+  <a class="chip {% if not area %}on{% endif %}" href="{% qs request area=None %}">All areas</a>
+  {% for a in areas %}<a class="chip {% if area == a.id %}on{% endif %}" href="{% qs request area=a.id %}">{{ a.name }}</a>{% endfor %}
+</div>
+
+{% if groups.overdue %}<div class="sec red">Overdue <span class="n">{{ counts.overdue }}</span></div>
+{% for o in groups.overdue %}{% include "partials/_occ.html" %}{% endfor %}{% endif %}
+
+{% if groups.today or not page.has_other_pages %}<div class="sec">Due today <span class="n">{{ counts.today }}</span></div>
+{% for o in groups.today %}{% include "partials/_occ.html" %}{% empty %}<div class="empty">{% if done_today %}🎉 Everything due today is done.{% else %}Nothing due today.{% endif %}</div>{% endfor %}{% endif %}
+
+{% if groups.upcoming %}<div class="sec">Coming up <span class="n">{{ counts.upcoming }}</span></div>
+{% for o in groups.upcoming %}{% include "partials/_occ.html" %}{% endfor %}{% endif %}
+{% include "partials/_pager.html" %}
+
+{% if done_today %}<div class="sec">Done today <span class="n">{{ done_today|length }}</span></div>
+{% for o in done_today %}{% include "partials/_occ.html" %}{% endfor %}{% endif %}
+{% include "partials/_dialogs.html" %}
+{% endblock %}

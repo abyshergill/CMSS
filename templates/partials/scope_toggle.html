@@ -1,0 +1,13 @@
+<form method="get" class="scope">
+  {% for k, v in keep %}<input type="hidden" name="{{ k }}" value="{{ v }}">{% endfor %}
+  {% if is_admin %}
+  <div class="scope3" role="radiogroup" aria-label="Which jobs to show">
+    {% for value, text in options %}<label class="{% if scope == value %}on{% endif %}"><input type="radio" name="scope" value="{{ value }}" data-autosubmit{% if scope == value %} checked{% endif %}><span>{{ text }}</span></label>{% endfor %}
+  </div>
+  {% else %}
+  <input type="hidden" name="scope" value="all">
+  <label class="switch"><input type="checkbox" name="scope" value="mine" data-autosubmit{% if scope == 'mine' %} checked{% endif %}>
+    <span class="track"></span><span class="lbl">{{ label }}</span></label>
+  {% endif %}
+  <noscript><button class="btn sm">Apply</button></noscript>
+</form>

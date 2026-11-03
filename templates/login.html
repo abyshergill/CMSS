@@ -1,0 +1,5 @@
+{% extends "base.html" %}{% block title %}Sign in{% endblock %}
+{% block body %}<div class="auth"><div class="card"><h1>🔧 CMMS</h1><p class="sub">Sign in to see today's work.</p>
+<form method="post" autocomplete="on">{% csrf_token %}<input type="hidden" name="next" value="{{ next }}">
+{% include "partials/_field.html" with field=form.username %}{% include "partials/_field.html" with field=form.password %}
+<div class="mt"><button class="btn primary full">Sign in</button></div></form></div></div>{% endblock %}

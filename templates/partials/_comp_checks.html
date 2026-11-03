@@ -1,0 +1,2 @@
+{% if c.checkpoints %}<details class="cps"><summary class="{% if c.checks_ok == c.checkpoints|length %}all-ok{% else %}some-bad{% endif %}">{{ c.checks_ok }}/{{ c.checkpoints|length }} checked</summary>
+ <ul>{% for k in c.checkpoints %}<li class="{% if k.ok %}ok{% else %}bad{% endif %}">{% if k.ok %}✓{% else %}✗{% endif %} {{ k.text }}</li>{% endfor %}</ul></details>{% else %}<span class="meta">—</span>{% endif %}

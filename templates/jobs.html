@@ -1,0 +1,19 @@
+{% extends "base.html" %}{% load ui %}{% block title %}Jobs{% endblock %}
+{% block body %}
+<div class="head"><div><h1>Jobs</h1><p class="sub">Everything that needs doing — one-off, repeating, or part of a project.</p></div>
+ <div class="head-r">{% scope_toggle request scope %}{% if admin %}<a class="btn primary" href="{% url 'job_new' %}">+ New job</a>{% endif %}</div></div>
+<form class="chips" method="get"><input type="hidden" name="scope" value="{{ scope }}"><input name="q" value="{{ q }}" maxlength="80" placeholder="Search jobs, equipment, projects…" class="search">
+ <a class="chip {% if not kind %}on{% endif %}" href="{% qs request kind=None page=None %}">All</a>
+ <a class="chip {% if kind == 'once' %}on{% endif %}" href="{% qs request kind='once' page=None %}">One-off</a>
+ <a class="chip {% if kind == 'repeat' %}on{% endif %}" href="{% qs request kind='repeat' page=None %}">↻ Repeating</a>
+ <a class="chip {% if kind == 'task' %}on{% endif %}" href="{% qs request kind='task' page=None %}">🎯 Project tasks</a></form>
+<div class="card flush"><table><tr><th>Job</th><th>Equipment / project</th><th>Assigned</th><th>When</th><th>Next</th></tr>
+{% for j in page %}<tr class="{% if not j.active %}faded{% endif %}">
+ <td><a href="{% url 'job_detail' j.pk %}"><b>{{ j.title }}</b></a>{% if not j.active %} <span class="tag">paused</span>{% endif %}</td>
+ <td>{% if j.project %}🎯 <a href="{% url 'project_detail' j.project.pk %}">{{ j.project.name }}</a>{% elif j.equipment %}{{ j.equipment.name }}<br><span class="meta">{{ j.equipment.area.name|default:"" }}</span>{% endif %}</td>
+ <td>{{ j.assigned_label|default:"—" }}{% if j.assignment_by %}<div class="meta">by {{ j.assignment_by.username }}, {{ j.assignment_at|date:"d M Y" }}</div>{% endif %}</td>
+ <td>{% if j.kind == 'repeat' %}<span class="tag rep nomargin">↻ {{ j|describe }}</span>{% else %}One-off{% endif %}</td>
+ <td>{% if j.next_occ %}{{ j.next_occ.when|date:"D d M" }} <span class="tag {% if j.next_occ.status == 'overdue' %}red{% endif %}">{{ j.next_occ.when|rel }}</span>{% else %}<span class="meta">—</span>{% endif %}</td></tr>
+{% empty %}<tr><td colspan="5" class="meta">No jobs found{% if scope == 'mine' %} assigned to you — switch off “My jobs only” to see everything{% endif %}.</td></tr>{% endfor %}</table></div>
+{% include "partials/_pager.html" %}
+{% endblock %}

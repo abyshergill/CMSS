@@ -1,0 +1,13 @@
+{% extends "base.html" %}{% load ui %}{% block title %}Calendar{% endblock %}
+{% block body %}
+<div class="head"><div><h1>{{ first|date:"F Y" }}</h1><p class="sub">Struck-through = done or skipped · red = overdue</p></div>
+ <div class="head-r">{% scope_toggle request scope %}
+ <a class="btn" href="{% qs request m=prev %}">‹</a><a class="btn" href="{% qs request m=None %}">Today</a><a class="btn" href="{% qs request m=nxt %}">›</a></div></div>
+<div class="cal">
+<div class="dow">Mon</div><div class="dow">Tue</div><div class="dow">Wed</div><div class="dow">Thu</div><div class="dow">Fri</div><div class="dow">Sat</div><div class="dow">Sun</div>
+{% for week in grid %}{% for c in week %}
+<div class="day{% if not c.in_month %} out{% endif %}{% if c.is_today %} now{% endif %}"><span class="num">{{ c.date.day }}</span>
+{% for o in c.items %}<a class="ev {{ o.status }}" href="{% url 'job_detail' o.job.pk %}" title="{{ o.job.title }}{% if o.job.equipment %} – {{ o.job.equipment.name }}{% endif %}">{% if o.job.kind == 'repeat' %}↻ {% elif o.job.project %}🎯 {% endif %}{{ o.job.title }}</a>{% endfor %}
+{% if c.extra %}<div class="more">+{{ c.extra }} more</div>{% endif %}</div>
+{% endfor %}{% endfor %}
+</div>{% endblock %}

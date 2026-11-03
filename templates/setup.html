@@ -1,0 +1,92 @@
+{% extends "base.html" %}{% load ui %}{% block title %}Setup{% endblock %}
+{% block body %}
+<div class="head"><div><h1>Setup</h1><p class="sub">People and their roles, groups, plant areas and sign-in security.</p></div></div>
+
+<nav class="tabs" aria-label="Setup sections">
+ <a class="tab {% if tab == 'people' %}on{% endif %}" href="{% url 'setup' %}?tab=people">People <span class="n">{{ counts.people }}</span></a>
+ <a class="tab {% if tab == 'groups' %}on{% endif %}" href="{% url 'setup' %}?tab=groups">Groups <span class="n">{{ counts.groups }}</span></a>
+ <a class="tab {% if tab == 'areas' %}on{% endif %}" href="{% url 'setup' %}?tab=areas">Areas <span class="n">{{ counts.areas }}</span></a>
+ <a class="tab {% if tab == 'security' %}on{% endif %}" href="{% url 'setup' %}?tab=security">Security</a>
+</nav>
+
+{% if tab == 'people' %}
+<div class="toolbar">
+ <form method="get" class="toolbar-form"><input type="hidden" name="tab" value="people">
+  <input class="search" type="search" name="q" value="{{ q }}" placeholder="Search by name…" maxlength="80" aria-label="Search people">
+  <select name="role" data-autosubmit aria-label="Filter by role">{% for value, text in roles %}<option value="{{ value }}"{% if role == value %} selected{% endif %}>{{ text }}</option>{% endfor %}</select>
+  <button class="btn">Search</button>{% if q or role != 'all' %}<a class="btn link" href="{% url 'setup' %}?tab=people">Clear</a>{% endif %}</form>
+ <button type="button" class="btn primary" data-open="dlg-newuser">+ Add person</button>
+</div>
+<div class="card flush"><table class="tbl">
+ <thead><tr><th>Person</th><th>Role</th><th>Groups</th><th class="right"></th></tr></thead>
+ {% for u in page %}<tr class="{% if not u.is_active %}faded{% endif %}">
+  <td><span class="avatar">{{ u|initials }}</span> <b>{{ u.username }}</b>{% if u.pk == user.pk %} <span class="tag">you</span>{% endif %}{% if not u.is_active %} <span class="tag">deactivated</span>{% endif %}</td>
+  <td><span class="role role-{{ u|role_key }}">{{ u|role_label }}</span></td>
+  <td>{% with gs=u.work_groups.all %}{% for g in gs|slice:":3" %}<a class="chip sm" href="{% url 'group_detail' g.pk %}">{{ g.name }}</a> {% empty %}<span class="meta">—</span>{% endfor %}{% if gs|length > 3 %}<span class="meta">+{{ gs|length|add:"-3" }} more</span>{% endif %}{% endwith %}</td>
+  <td class="right">{% if u|manageable_by:user %}<button type="button" class="btn sm" data-open="dlg-user" data-username="{{ u.username }}" data-role="{{ u|role_key }}" data-rolepost="{% if u.pk != user.pk and not u.is_superuser %}{% url 'user_role' u.pk %}{% endif %}" data-reset="{% url 'user_password' u.pk %}" data-toggle="{% if u.pk != user.pk %}{% url 'user_toggle' u.pk %}{% endif %}" data-toggletext="{% if u.is_active %}Deactivate{% else %}Activate{% endif %}">Manage</button>{% else %}<span class="meta" title="Only an Admin can change an Admin account">Admin only</span>{% endif %}</td></tr>
+ {% empty %}<tr><td class="empty-row" colspan="4">Nobody matches{% if q %} “{{ q }}”{% endif %}.</td></tr>{% endfor %}
+</table></div>
+{% include "partials/_pager.html" %}
+
+<dialog id="dlg-newuser"><form method="post" action="{% url 'user_add' %}">{% csrf_token %}
+ <input type="hidden" name="back" value="{{ request.get_full_path }}">
+ <h2>Add a person</h2>
+ <div class="grid2">{% include "partials/_field.html" with field=new_user.username %}{% include "partials/_field.html" with field=new_user.role %}
+  {% include "partials/_field.html" with field=new_user.password1 %}{% include "partials/_field.html" with field=new_user.password2 %}</div>
+ <p class="meta">Passwords need 10+ characters and cannot be common or all digits.</p>
+ <p class="meta"><b>Engineer</b> does the assigned work. <b>Manager</b> can do everything except create or change Admins. <b>Admin</b> can do everything.</p>
+ <div class="dlg-actions"><button type="button" class="btn" data-close>Cancel</button><button class="btn primary">Add person</button></div></form></dialog>
+
+<dialog id="dlg-user">
+ <h2>Manage <span data-fill="username"></span></h2>
+ <form method="post" data-action-from="reset" class="stack">{% csrf_token %}<input type="hidden" name="back" value="{{ request.get_full_path }}">
+  <div class="field"><label>Set a new password</label><input type="password" name="password" required autocomplete="new-password" placeholder="New password"></div>
+  <button class="btn primary">Change password</button></form>
+ <form method="post" data-action-from="rolepost" class="stack" data-confirm="Change this person's role?">{% csrf_token %}<input type="hidden" name="back" value="{{ request.get_full_path }}">
+  <div class="field"><label>Role</label><select name="role" data-value-from="role">{% for value, text in role_choices %}<option value="{{ value }}">{{ text }}</option>{% endfor %}</select></div>
+  <button class="btn">Change role</button></form>
+ <form method="post" data-action-from="toggle" class="stack" data-confirm="Change this person's access?">{% csrf_token %}<input type="hidden" name="back" value="{{ request.get_full_path }}">
+  <p class="meta">Deactivated people cannot sign in; their history is kept.</p><button class="btn"><span data-fill="toggletext">Deactivate</span></button></form>
+ <div class="dlg-actions"><button type="button" class="btn" data-close>Close</button></div></dialog>
+
+{% elif tab == 'groups' %}
+<div class="toolbar">
+ <form method="get" class="toolbar-form"><input type="hidden" name="tab" value="groups">
+  <input class="search" type="search" name="q" value="{{ q }}" placeholder="Search groups…" maxlength="80" aria-label="Search groups"><button class="btn">Search</button>
+  {% if q %}<a class="btn link" href="{% url 'setup' %}?tab=groups">Clear</a>{% endif %}</form>
+ <form method="post" action="{% url 'group_add' %}" class="toolbar-form">{% csrf_token %}
+  <input class="search" name="name" required maxlength="80" placeholder="New group name, e.g. Night shift" aria-label="New group name"><button class="btn primary">+ Create group</button></form>
+</div>
+<div class="card flush"><table class="tbl">
+ <thead><tr><th>Group</th><th>Members</th><th>Jobs</th><th class="right"></th></tr></thead>
+ {% for g in page %}<tr>
+  <td><a href="{% url 'group_detail' g.pk %}"><b>{{ g.name }}</b></a></td>
+  <td>{% for n in g.preview %}<span class="chip sm">{{ n }}</span> {% empty %}<span class="meta">No members yet</span>{% endfor %}{% if g.more %}<span class="meta">+{{ g.more }} more</span>{% endif %}
+   <div class="meta">{{ g.nmembers }} member{{ g.nmembers|pluralize }}</div></td>
+  <td>{{ g.njobs }}</td>
+  <td class="right"><a class="btn sm" href="{% url 'group_detail' g.pk %}">Open</a></td></tr>
+ {% empty %}<tr><td class="empty-row" colspan="4">{% if q %}No group matches “{{ q }}”.{% else %}No groups yet. Create one above, then add its members.{% endif %}</td></tr>{% endfor %}
+</table></div>
+{% include "partials/_pager.html" %}
+
+{% elif tab == 'areas' %}
+<div class="toolbar"><span class="meta">Areas group your equipment (for example “Assembly Line”).</span>
+ <form method="post" action="{% url 'area_add' %}" class="toolbar-form">{% csrf_token %}
+  <input class="search" name="name" required maxlength="80" placeholder="e.g. Assembly Line" aria-label="New area name"><button class="btn primary">+ Add area</button></form></div>
+<div class="card flush"><table class="tbl">
+ <thead><tr><th>Area</th><th>Equipment</th><th class="right"></th></tr></thead>
+ {% for a in areas %}<tr><td><b>{{ a.name }}</b></td><td>{{ a.nequip }}</td>
+  <td class="right"><form method="post" action="{% url 'area_delete' a.pk %}" class="inline" data-confirm="Delete this area?">{% csrf_token %}<button class="btn sm danger">Delete</button></form></td></tr>
+ {% empty %}<tr><td class="empty-row" colspan="3">No areas yet.</td></tr>{% endfor %}
+</table></div>
+
+{% else %}
+<div class="stats"><div class="stat red"><b>{{ failed_24h }}</b>Failed sign-ins, last 24 h</div><div class="stat"><b>{{ ips_24h }}</b>Different addresses</div></div>
+<div class="card flush"><table class="tbl">
+ <thead><tr><th>When</th><th>Username tried</th><th>Address</th></tr></thead>
+ {% for f in failed %}<tr><td class="nowrap">{{ f.created_at|date:"d M Y H:i" }}</td><td>{{ f.username }}</td><td class="meta">{{ f.ip|default:"" }}</td></tr>
+ {% empty %}<tr><td class="empty-row" colspan="3">No failed sign-ins. 👍</td></tr>{% endfor %}
+</table></div>
+<p class="meta">Latest 50 shown. After 5 wrong passwords for one username (or 20 from one address) sign-in is blocked for 15 minutes.</p>
+{% endif %}
+{% endblock %}

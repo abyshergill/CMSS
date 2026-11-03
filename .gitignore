@@ -1,0 +1,9 @@
+.env
+*.db
+__pycache__/
+*.py[cod]
+.pytest_cache/
+media/
+staticfiles/
+.DS_Store
+django.db

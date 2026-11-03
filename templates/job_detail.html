@@ -1,0 +1,53 @@
+{% extends "base.html" %}{% load ui %}{% block title %}{{ job.title }}{% endblock %}
+{% block body %}
+<div class="head"><div><h1>{{ job.title }} {% if not job.active %}<span class="tag">paused</span>{% endif %}</h1>
+ <p class="sub">{% if job.project %}🎯 <a href="{% url 'project_detail' job.project.pk %}">{{ job.project.name }}</a>{% endif %}
+ {% if job.equipment %}{% if job.project %} · {% endif %}<a href="{% url 'equipment_detail' job.equipment.pk %}">{{ job.equipment.name }} ({{ job.equipment.code }})</a>{% if job.equipment.area %} · {{ job.equipment.area.name }}{% endif %}{% endif %}</p></div>
+{% if can_manage %}<div class="row-gap"><a class="btn" href="{% url 'job_edit' job.pk %}">Edit</a>
+ <form method="post" action="{% url 'job_toggle' job.pk %}" class="inline">{% csrf_token %}<button class="btn">{% if job.active %}Pause{% else %}Resume{% endif %}</button></form>
+ <form method="post" action="{% url 'job_delete' job.pk %}" class="inline" data-confirm="Delete this job and all its history?">{% csrf_token %}<button class="btn danger">Delete</button></form></div>{% endif %}</div>
+
+<div class="card"><dl class="kv">
+ <dt>Schedule</dt><dd>{% if job.kind == 'repeat' %}<span class="tag rep nomargin">↻ {{ job|describe }}</span> starting {{ job.start_date|date:"d M Y" }}{% if job.end_date %}, until {{ job.end_date|date:"d M Y" }}{% endif %}{% else %}One time · due {{ job.start_date|date:"D d M Y" }}{% endif %}</dd>
+ <dt>Assigned to</dt><dd>{{ job.assigned_label|default:"Anyone" }}{% if job.assigned_group %} <span class="meta">({% for m in job.assigned_group.members.all %}{{ m.username }}{% if not forloop.last %}, {% endif %}{% empty %}no members yet{% endfor %})</span>{% endif %}</dd>
+ {% if job.is_assigned %}<dt>Assigned by</dt><dd>{{ job.assignment_by.username|default:"—" }} <span class="meta">on {{ job.assignment_at|date:"D d M Y, H:i" }}</span></dd>{% endif %}
+ {% if job.kind == 'repeat' %}<dt>Can be marked done</dt><dd>Only during {{ job|window_name }} it belongs to — not in advance.</dd>{% endif %}
+ <dt>Photo / file</dt><dd>{% if job.evidence_required %}<span class="tag red nomargin">Required</span> to mark it done{% else %}Optional{% endif %}</dd>
+ {% if job.checkpoints %}<dt>Checkpoints</dt><dd><ul class="cp-list">{% for k in job.checkpoints %}<li>☑ {{ k }}</li>{% endfor %}</ul></dd>{% endif %}
+ {% if job.project %}<dt>Effort points</dt><dd>{{ job.weight }}</dd>{% endif %}
+ {% if job.instructions %}<dt>Instructions</dt><dd class="pre">{{ job.instructions }}</dd>{% endif %}</dl></div>
+
+<h2>📎 Files for this job</h2>
+<div class="card">
+ <ul class="files">{% for a in attachments %}<li><a href="{% url 'attachment' a.pk %}">{{ a.original_name }}</a> <span class="meta">{{ a.size|filesizeformat }} · {{ a.uploaded_by.username|default:"" }} · {{ a.uploaded_at|date:"d M Y" }}</span>
+  {% if can_manage %}<form method="post" action="{% url 'attachment_delete' a.pk %}" class="inline" data-confirm="Remove this file?">{% csrf_token %}<button class="btn link danger">remove</button></form>{% endif %}</li>
+ {% empty %}<li class="meta">No files attached.</li>{% endfor %}</ul>
+ {% if can_manage %}<form method="post" action="{% url 'job_upload' job.pk %}" enctype="multipart/form-data" class="upload">{% csrf_token %}
+  {{ attach_form.files }}<button class="btn sm">Upload</button></form><small class="mute">PDF, image, Word, CSV or Excel · 10 MB each</small>{% endif %}</div>
+
+<h2>{% if job.kind == 'repeat' %}Coming dates{% else %}Status{% endif %}</h2>
+{% for o in upcoming %}{% include "partials/_occ.html" %}{% empty %}<div class="empty">Nothing scheduled. This job has finished or is paused.</div>{% endfor %}
+
+{% if job.kind == 'repeat' %}
+<h2 class="gap">Exceptions <span class="meta">— days that differ from the normal schedule</span></h2>
+{% if admin %}<form method="post" action="{% url 'skip_create' %}" class="card">{% csrf_token %}
+ <input type="hidden" name="job" value="{{ job.pk }}"><input type="hidden" name="back" value="{{ request.get_full_path }}">
+ <b>Skip one or more days</b><div class="grid3b"><div class="field"><label>From</label><input type="date" name="start_date" required></div>
+ <div class="field"><label>To (last day, included)</label><input type="date" name="end_date" required></div>
+ <div class="field"><label>Reason</label><input name="reason" maxlength="200" placeholder="e.g. Holiday"></div></div>
+ <button class="btn primary sm">Skip these days</button> <span class="meta">For a single day, use the same date in both boxes.</span></form>{% endif %}
+{% if skip_ranges or moves %}<div class="card flush"><table>
+{% for r in skip_ranges %}<tr><td><span class="tag">skipped</span></td><td><b>{{ r.start_date|date:"D d M Y" }}{% if r.days > 1 %} → {{ r.end_date|date:"D d M Y" }}{% endif %}</b> <span class="meta">({{ r.days }} day{{ r.days|pluralize }})</span></td><td>{{ r.reason }}<div class="meta">{{ r.created_by.username|default:"" }}</div></td>
+ <td class="right">{% if admin %}<form method="post" action="{% url 'skip_undo' r.pk %}" class="inline">{% csrf_token %}<button class="btn sm">Undo</button></form>{% endif %}</td></tr>{% endfor %}
+{% for m in moves %}<tr><td><span class="tag moved">moved</span></td><td><b>{{ m.orig_date|date:"D d M Y" }}</b> → {{ m.new_date|date:"D d M" }}</td><td>{{ m.reason }}<div class="meta">{{ m.created_by.username|default:"" }}</div></td>
+ <td class="right">{% if admin %}<form method="post" action="{% url 'move_undo' m.pk %}" class="inline">{% csrf_token %}<button class="btn sm">Undo</button></form>{% endif %}</td></tr>{% endfor %}</table></div>{% endif %}
+{% endif %}
+
+<h2 class="gap">History <span class="meta">({{ history.paginator.count }})</span></h2>
+<div class="card flush"><table>{% for c in history %}<tr><td class="nowrap"><b>{{ c.done_at|date:"d M Y, H:i" }}</b><div class="meta">for {{ c.due_date|date:"d M" }}{% if not c.on_time %} · <span class="red-t">late</span>{% endif %}</div></td>
+ <td>{{ c.note|default:"—" }}{% if c.evidence %}<br><a href="{% url 'evidence' c.pk %}">📎 {{ c.evidence_name }}</a>{% endif %}</td>
+ <td>{% include "partials/_comp_checks.html" %}</td><td>{% include "partials/_comp_assigned.html" %}</td><td class="meta">{{ c.done_by.username|default:"" }}</td>
+ <td class="right">{% if admin %}<form method="post" action="{% url 'completion_undo' c.pk %}" class="inline" data-confirm="Mark this as not done?">{% csrf_token %}<input type="hidden" name="back" value="{{ request.get_full_path }}"><button class="btn sm">Undo</button></form>{% endif %}</td></tr>
+{% empty %}<tr><td class="meta">Nothing done yet.</td></tr>{% endfor %}</table></div>
+{% include "partials/_pager.html" with page=history pkey="hp" perkey="hper" %}
+{% include "partials/_dialogs.html" %}{% endblock %}

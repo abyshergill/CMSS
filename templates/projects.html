@@ -1,0 +1,15 @@
+{% extends "base.html" %}{% load ui %}{% block title %}Projects{% endblock %}
+{% block body %}
+<div class="head"><div><h1>Projects</h1><p class="sub">Break a project into small tasks, give them to people, and watch progress.</p></div>
+ <div class="head-r">{% scope_toggle request scope "My projects only" %}{% if admin %}<a class="btn primary" href="{% url 'project_new' %}">+ Create project</a>{% endif %}</div></div>
+<form class="chips" method="get"><input type="hidden" name="scope" value="{{ scope }}"><input name="q" value="{{ q }}" maxlength="80" placeholder="Search projects or owners…" class="search" aria-label="Search projects"><button class="btn">Search</button>{% if q %}<a class="btn link" href="{% qs request q=None page=None %}">Clear</a>{% endif %}</form>
+<div class="cards">
+{% for c in cards %}<a class="pcard card" href="{% url 'project_detail' c.p.pk %}">
+ <div class="ring-box">{{ c.ring }}</div>
+ <div><div class="title">{{ c.p.name }} {% if c.p.status == 'closed' %}<span class="tag">closed</span>{% endif %}</div>
+  <div class="meta">{{ c.s.done }} of {{ c.s.total }} tasks done · {{ c.s.weight_done }}/{{ c.s.weight_total }} points</div>
+  <div class="meta">{% if c.p.owner %}👤 {{ c.p.owner.username }}{% endif %}{% if c.p.due_date %} · due {{ c.p.due_date|date:"d M Y" }}{% endif %}</div>
+  {% if c.s.overdue %}<span class="tag red">{{ c.s.overdue }} overdue</span>{% endif %}</div></a>
+{% empty %}<div class="empty wide">No projects{% if scope == 'mine' %} that involve you — switch off “My projects only” to see all{% endif %}.</div>{% endfor %}
+</div>
+{% include "partials/_pager.html" %}{% endblock %}

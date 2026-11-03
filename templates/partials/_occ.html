@@ -1,0 +1,33 @@
+{% load ui %}
+<div class="row {{ o.status }}">
+  <div class="main">
+    <div class="title"><a href="{% url 'job_detail' o.job.pk %}">{{ o.job.title }}</a>
+      {% if o.job.kind == 'repeat' %}<span class="tag rep">↻ {{ o.job|describe }}</span>{% endif %}
+      {% if o.job.project %}<a class="tag proj" href="{% url 'project_detail' o.job.project.pk %}">🎯 {{ o.job.project.name }}</a>{% endif %}
+      {% if o.moved %}<span class="tag moved">moved from {{ o.orig|date:"d M" }}</span>{% endif %}
+      {% if o.status == 'skipped' %}<span class="tag">skipped{% if o.skip_range.reason %}: {{ o.skip_range.reason }}{% endif %}</span>{% endif %}</div>
+    <div class="meta">{% if o.job.equipment %}{{ o.job.equipment.name }} ({{ o.job.equipment.code }}){% if o.job.equipment.area %} · {{ o.job.equipment.area.name }}{% endif %}{% endif %}
+      {% if o.job.assigned_group %} · {{ o.job.assigned_label }}{% elif o.job.assignee %} · 👤 {{ o.job.assignee.username }}{% endif %}
+      {% with n=o.job.attachments.all|length %}{% if n %} · 📎 {{ n }} file{{ n|pluralize }}{% endif %}{% endwith %}
+      {% if o.job.checkpoints %} · ☑ {{ o.job.checkpoints|length }} checkpoint{{ o.job.checkpoints|length|pluralize }}{% endif %}
+      {% if o.job.evidence_required %} · 📷 file required{% endif %}
+      {% if o.closes and o.status != 'done' and o.opens != o.closes and o.state == 'ok' %} · can be done until {{ o.closes|date:"D d M" }}{% endif %}</div>
+  </div>
+  <div class="when meta">
+    {% if o.status == 'done' %}<span class="tag green">Done {{ o.completion.done_at|date:"d M H:i" }}</span>
+    {% else %}{{ o.when|date:"D d M" }}<br>{% if o.status == 'overdue' %}<span class="tag red">{{ o.when|rel }}</span>{% else %}{{ o.when|rel }}{% endif %}{% endif %}
+  </div>
+  <div class="acts">
+    {% if o.status == 'overdue' or o.status == 'today' or o.status == 'upcoming' %}
+      {% if o.can_do %}
+        {% if o.state == 'early' %}<span class="tag amber" title="A repeating job cannot be finished in advance">Opens {{ o.opens|date:"D d M" }}</span>
+        {% elif o.state == 'closed' %}{% if admin_user %}{% include "partials/_done_button.html" with job=o.job due=o.orig late=True %}{% else %}<span class="tag red" title="Its time ended. Ask an admin to record it.">Missed · ended {{ o.closes|date:"d M" }}</span>{% endif %}
+        {% else %}{% include "partials/_done_button.html" with job=o.job due=o.orig late=False %}{% endif %}
+      {% endif %}
+      {% if o.can_manage %}
+      <button type="button" class="btn sm" data-open="dlg-skip" data-job="{{ o.job.pk }}" data-start_date="{{ o.orig|date:'Y-m-d' }}" data-end_date="{{ o.orig|date:'Y-m-d' }}" data-title="{{ o.job.title }}">Skip…</button>
+      <button type="button" class="btn sm" data-open="dlg-move" data-job="{{ o.job.pk }}" data-orig_date="{{ o.orig|date:'Y-m-d' }}" data-new_date="{{ o.orig|date:'Y-m-d' }}" data-title="{{ o.job.title }} · {{ o.orig|date:'D d M' }}">Move</button>
+      {% endif %}
+    {% endif %}
+  </div>
+</div>

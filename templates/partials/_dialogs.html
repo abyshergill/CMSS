@@ -1,0 +1,27 @@
+<dialog id="dlg-done"><form method="post" action="{% url 'done' %}" enctype="multipart/form-data">{% csrf_token %}
+  <input type="hidden" name="job"><input type="hidden" name="due_date"><input type="hidden" name="back" value="{{ request.get_full_path }}">
+  <h2><span data-when-normal>Mark done</span><span data-when-late hidden>Record a late entry</span></h2><div class="sub" data-fill="title"></div>
+  <fieldset class="checklist" data-checklist hidden><legend>Checkpoints <small class="mute">tick each one once you have checked it</small></legend><div data-checklist-items></div></fieldset>
+  <div class="field"><label>What did you do? <small class="mute" data-note-optional>(optional)</small><small class="req" data-note-needed hidden>(required: say why it is being recorded late)</small></label><textarea name="note" rows="3" maxlength="4000" placeholder="e.g. Replaced belt, all fine"></textarea></div>
+  <div class="field"><label>Photo or document <small class="mute" data-evidence-optional>(optional · PDF, image, Word, CSV, Excel · 10 MB max)</small><small class="req" data-evidence-needed hidden>(required · PDF, image, Word, CSV, Excel · 10 MB max)</small></label><input type="file" name="evidence" accept=".pdf,.png,.jpg,.jpeg,.gif,.webp,.doc,.docx,.csv,.xls,.xlsx"></div>
+  <div class="dlg-actions"><button type="button" class="btn" data-close>Cancel</button><button class="btn good">Save</button></div>
+</form></dialog>
+{% if admin %}
+<dialog id="dlg-skip"><form method="post" action="{% url 'skip_create' %}">{% csrf_token %}
+  <input type="hidden" name="job"><input type="hidden" name="back" value="{{ request.get_full_path }}">
+  <h2>Skip days</h2><div class="sub" data-fill="title"></div>
+  <p class="meta">Pick the first and last day. Every date of this job between them (both included) is skipped. Other dates stay as normal.</p>
+  <div class="grid2"><div class="field"><label>From</label><input type="date" name="start_date" required></div>
+  <div class="field"><label>To (last day)</label><input type="date" name="end_date" required></div></div>
+  <div class="field"><label>Why? <small class="mute">(optional)</small></label><input name="reason" maxlength="200" placeholder="e.g. Holiday shutdown"></div>
+  <div class="dlg-actions"><button type="button" class="btn" data-close>Cancel</button><button class="btn primary">Skip these days</button></div>
+</form></dialog>
+<dialog id="dlg-move"><form method="post" action="{% url 'move_create' %}">{% csrf_token %}
+  <input type="hidden" name="job"><input type="hidden" name="orig_date"><input type="hidden" name="back" value="{{ request.get_full_path }}">
+  <h2>Move one date</h2><div class="sub" data-fill="title"></div>
+  <p class="meta">Only this one date moves. The rest of the schedule stays the same.</p>
+  <div class="field"><label>New date</label><input type="date" name="new_date" required></div>
+  <div class="field"><label>Why? <small class="mute">(optional)</small></label><input name="reason" maxlength="200" placeholder="e.g. Waiting for a spare part"></div>
+  <div class="dlg-actions"><button type="button" class="btn" data-close>Cancel</button><button class="btn primary">Move it</button></div>
+</form></dialog>
+{% endif %}

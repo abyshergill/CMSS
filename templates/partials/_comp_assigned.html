@@ -1,0 +1,3 @@
+<div class="assign">{% if c.shown_assigned_to %}<b>{{ c.shown_assigned_to }}</b>{% else %}<span class="meta">Anyone</span>{% endif %}
+ {% if c.shown_assigned_by %}<div class="meta">by {{ c.shown_assigned_by.username }}</div>{% endif %}
+ {% if c.shown_assigned_at %}<div class="meta">on {{ c.shown_assigned_at|date:"d M Y, H:i" }}</div>{% endif %}</div>

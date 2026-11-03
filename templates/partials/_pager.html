@@ -1,0 +1,5 @@
+{% load ui %}{% with key=pkey|default:"page" pk=perkey|default:"per" %}{% if page.paginator.count > 10 %}<nav class="pager" aria-label="Pages">
+ {% if page.has_previous %}<a class="btn sm" rel="prev" href="{% page_url request key page.previous_page_number %}">‹ Prev</a>{% endif %}
+ <span class="meta">{% if page.has_other_pages %}Page {{ page.number }} of {{ page.paginator.num_pages }} · {% endif %}{{ page.paginator.count }} in total</span>
+ {% if page.has_next %}<a class="btn sm" rel="next" href="{% page_url request key page.next_page_number %}">Next ›</a>{% endif %}
+ <span class="per" aria-label="Rows per page"><span class="meta">Show</span>{% for n in page_sizes %}<a class="chip sm {% if page.paginator.per_page == n %}on{% endif %}" href="{% per_url request n key pk %}">{{ n }}</a>{% endfor %}</span></nav>{% endif %}{% endwith %}

@@ -1,0 +1,16 @@
+{% extends "base.html" %}{% block title %}Equipment{% endblock %}
+{% block body %}
+<div class="head"><div><h1>Equipment</h1><p class="sub">Status is worked out automatically from its jobs.</p></div></div>
+{% if admin %}<details class="card"><summary>+ Add equipment</summary>
+<form method="post" action="{% url 'equipment_new' %}">{% csrf_token %}
+<div class="grid2">{% include "partials/_field.html" with field=form.code %}{% include "partials/_field.html" with field=form.name %}{% include "partials/_field.html" with field=form.area %}{% include "partials/_field.html" with field=form.notes %}</div>
+<div class="mt"><button class="btn primary">Add</button> <span class="meta">Tip: add areas first under Setup.</span></div></form></details>{% endif %}
+<form class="chips" method="get"><input name="q" value="{{ q }}" maxlength="80" placeholder="Search name, code or area…" class="search" aria-label="Search equipment"><button class="btn">Search</button>{% if q %}<a class="btn link" href="{% url 'equipment' %}">Clear</a>{% endif %}</form>
+{% regroup rows by area as groups %}
+{% for g in groups %}<div class="sec">{{ g.grouper.name|default:"No area" }}</div>
+ {% for e in g.list %}<a class="row link-row {% if e.health == 'overdue' %}overdue{% elif e.health == 'soon' %}upcoming{% else %}done{% endif %}" href="{% url 'equipment_detail' e.pk %}">
+  <div class="main"><div class="title">{{ e.name }} <span class="meta">{{ e.code }}</span></div><div class="meta">{{ e.njobs }} active job{{ e.njobs|pluralize }}</div></div>
+  <span class="tag {% if e.health == 'overdue' %}red{% elif e.health == 'soon' %}amber{% else %}green{% endif %}">{% if e.health == 'overdue' %}{{ e.overdue_n }} overdue{% elif e.health == 'soon' %}Due soon{% else %}All good{% endif %}</span></a>{% endfor %}
+{% empty %}<div class="empty">{% if q %}Nothing matches “{{ q }}”.{% else %}No equipment yet.{% endif %}</div>{% endfor %}
+{% include "partials/_pager.html" %}
+{% endblock %}

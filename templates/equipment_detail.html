@@ -1,0 +1,20 @@
+{% extends "base.html" %}{% load ui %}{% block title %}{{ e.name }}{% endblock %}
+{% block body %}
+<div class="head"><div><h1>{{ e.name }} <span class="mute">{{ e.code }}</span></h1><p class="sub">{{ e.area.name|default:"No area" }}{% if e.notes %} · {{ e.notes }}{% endif %}</p></div>
+{% if admin %}<a class="btn primary" href="{% url 'job_new' %}">+ Add job</a>{% endif %}</div>
+{% if occs %}<h2>Needs attention</h2>{% for o in occs %}{% include "partials/_occ.html" %}{% endfor %}{% endif %}
+<h2 class="gap">Jobs</h2>
+<div class="card flush"><table>{% for j in jobs %}<tr class="{% if not j.active %}faded{% endif %}"><td><a href="{% url 'job_detail' j.pk %}"><b>{{ j.title }}</b></a></td>
+ <td>{% if j.kind == 'repeat' %}<span class="tag rep nomargin">↻ {{ j|describe }}</span>{% else %}One-off · {{ j.start_date|date:"D d M" }}{% endif %}</td><td>{{ j.assigned_label|default:"" }}</td><td>{% if not j.active %}paused{% endif %}</td></tr>
+{% empty %}<tr><td class="meta">No jobs yet.</td></tr>{% endfor %}</table></div>
+{% include "partials/_pager.html" with page=jobs pkey="jp" perkey="jper" %}
+<h2 class="gap">History</h2>
+<div class="card flush"><table>{% for c in history %}<tr><td class="nowrap">{{ c.done_at|date:"d M Y, H:i" }}</td><td><b>{{ c.job.title }}</b><br>{{ c.note }}{% if c.evidence %} <a href="{% url 'evidence' c.pk %}">📎</a>{% endif %}</td>
+ <td>{% include "partials/_comp_checks.html" %}</td><td>{% include "partials/_comp_assigned.html" %}</td><td class="meta">{{ c.done_by.username|default:"" }}</td></tr>
+{% empty %}<tr><td class="meta">Nothing yet.</td></tr>{% endfor %}</table></div>
+{% include "partials/_pager.html" with page=history pkey="hp" perkey="hper" %}
+{% if admin %}<details class="card gap"><summary>Edit equipment</summary>
+<form method="post" action="{% url 'equipment_edit' e.pk %}">{% csrf_token %}<div class="grid2">{% include "partials/_field.html" with field=form.code %}{% include "partials/_field.html" with field=form.name %}{% include "partials/_field.html" with field=form.area %}{% include "partials/_field.html" with field=form.notes %}</div>
+<div class="mt"><button class="btn primary">Save</button></div></form>
+<form method="post" action="{% url 'equipment_archive' e.pk %}" class="mt" data-confirm="Archive? Its jobs will leave the schedule; history is kept.">{% csrf_token %}<button class="btn danger">Archive equipment</button></form></details>{% endif %}
+{% include "partials/_dialogs.html" %}{% endblock %}
